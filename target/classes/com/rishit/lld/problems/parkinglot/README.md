@@ -10,96 +10,145 @@ Design a **Parking Lot System** that supports:
 
 ---
 
-## 🏗️ Class Diagram
+## 🏗️ UML Class Diagram
 
-ParkingLot (Singleton)
-├── List<ParkingSlot>
-├── Map<String, Ticket> activeTickets
-├── parkVehicle(Vehicle): Ticket
-└── unparkVehicle(ticketId): void
+```mermaid
+classDiagram
+    %% ==========================
+    %% Enums
+    %% ==========================
+    class VehicleType {
+      <<enumeration>>
+      CAR
+      BIKE
+      TRUCK
+    }
 
-ParkingSlot
-├── slotId
-├── slotType (SlotType)
-├── parkedVehicle (Vehicle)
+    class SlotType {
+      <<enumeration>>
+      COMPACT
+      BIKE
+      LARGE
+    }
 
-Vehicle (abstract)
-├── Car
-├── Bike
-└── Truck
+    %% ==========================
+    %% Vehicle hierarchy
+    %% ==========================
+    class Vehicle {
+      <<abstract>>
+      - numberPlate : String
+      - type : VehicleType
+      + getNumberPlate() : String
+      + getType() : VehicleType
+    }
+    class Car
+    class Bike
+    class Truck
 
-Ticket
-├── ticketId
-├── vehicle
-├── slot
-├── entryTime, exitTime
-├── price
+    Vehicle <|-- Car
+    Vehicle <|-- Bike
+    Vehicle <|-- Truck
 
-PricingStrategy (interface)
-└── HourlyPricingStrategy
+    %% ==========================
+    %% ParkingSlot
+    %% ==========================
+    class ParkingSlot {
+      - slotId : String
+      - slotType : SlotType
+      - parkedVehicle : Vehicle
+      + isAvailable() : boolean
+      + assignVehicle(v: Vehicle) : void
+      + removeVehicle() : void
+    }
 
-yaml
-Copy code
+    %% ==========================
+    %% Ticket
+    %% ==========================
+    class Ticket {
+      - ticketId : String
+      - vehicle : Vehicle
+      - slot : ParkingSlot
+      - entryTime : LocalDateTime
+      - exitTime : LocalDateTime
+      - price : double
+      + closeTicket() : void
+      + getParkingDurationInHours() : long
+      + setPrice(p: double) : void
+      + getPrice() : double
+    }
 
----
+    %% ==========================
+    %% Pricing Strategy
+    %% ==========================
+    class PricingStrategy {
+      <<interface>>
+      + calculatePrice(t: Ticket) : double
+    }
 
-## 📂 Folder Structure
+    class HourlyPricingStrategy {
+      + calculatePrice(t: Ticket) : double
+    }
+
+    PricingStrategy <|.. HourlyPricingStrategy
+
+    %% ==========================
+    %% ParkingLot (Singleton)
+    %% ==========================
+    class ParkingLot {
+      <<Singleton>>
+      - instance : ParkingLot
+      - slots : List<ParkingSlot>
+      - activeTickets : Map<String, Ticket>
+      - pricingStrategy : PricingStrategy
+      + getInstance() : ParkingLot
+      + parkVehicle(v: Vehicle) : Ticket
+      + unparkVehicle(ticketId: String) : void
+      - isSlotSuitable(slot: ParkingSlot, v: Vehicle) : boolean
+    }
+
+    %% ==========================
+    %% Relationships
+    %% ==========================
+    ParkingLot "1" --> "*" ParkingSlot
+    ParkingLot "1" --> "*" Ticket
+    Ticket --> Vehicle
+    Ticket --> ParkingSlot
+    ParkingSlot --> Vehicle
+
+
+📂 Folder Structure
 parkinglot/
-│── Enums.java # VehicleType, SlotType
-│── Vehicle.java # Base class
+│── Enums.java
+│── Vehicle.java
 │── Car.java, Bike.java, Truck.java
-│── ParkingSlot.java # Slot details
-│── Ticket.java # Ticket model
-│── PricingStrategy.java # Strategy pattern
-│── ParkingLot.java # Singleton manager
-│── README.md # This file
+│── ParkingSlot.java
+│── Ticket.java
+│── PricingStrategy.java
+│── ParkingLot.java
+│── README.md   <-- this file
 
-yaml
-Copy code
+▶️ How to Run
+Compile & Run with Maven
 
----
+From project root:
 
-## ▶️ How to Run
-
-### 1. Compile & Run with Maven
-From repo root:
-```bash
 mvn clean compile
 mvn exec:java -Dexec.mainClass="com.rishit.lld.demos.ParkingLotDemo"
+
 ✅ Sample Output
-java
-Copy code
 ✅ Vehicle KA01AB1234 parked at slot A1 (Ticket: 8cda...f12)
 ✅ Vehicle KA02XY4567 parked at slot B1 (Ticket: 123a...89b)
 ✅ Vehicle KA03PQ7890 parked at slot C1 (Ticket: 77c2...9dd)
 🚗 Vehicle KA01AB1234 unparked. Total Price = ₹20
 🚗 Vehicle KA02XY4567 unparked. Total Price = ₹10
 ⚠️ Invalid Ticket!
-🔑 Design Highlights
-Singleton Pattern → Only one ParkingLot manager.
 
-Strategy Pattern → Pricing calculation (easy to extend with daily/flat pricing).
+🔑 Design Highlights
+
+Singleton Pattern → ParkingLot ensures only one manager exists.
+
+Strategy Pattern → PricingStrategy allows multiple billing methods.
 
 Inheritance → Car, Bike, Truck extend Vehicle.
 
-Clean Separation → Core logic in problems/, demo runner in demos/.
-
-🎯 Extensions (for interviews)
-Add multiple levels/floors.
-
-Add reservation system.
-
-Add admin dashboard for available/free slots.
-
-Implement real-time notifications (Observer pattern).
-
-yaml
-Copy code
-
----
-
-👉 Now, in your **root README.md**, add a link under **Problems**:
-
-```markdown
-## Problems
-- [Parking Lot](src/main/java/com/rishit/lld/problems/parkinglot/README.md)
+Extensible → Easy to add more vehicles, slot types, or pricing rules.
